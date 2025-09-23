@@ -1,0 +1,75 @@
+services:
+  app:
+    build: .
+    container_name: afterbuy-back
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition:
+          service_healthy
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:16
+    container_name: afterbuy-db
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+    healthcheck:
+      test: pg_isready -d ${DB_NAME} -U ${DB_USER}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  celery_worker:
+    build: .
+    command: celery -A src.libs.celery_app worker -l info -P gevent --concurrency=10
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_started
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A src.libs.celery_app flower --port=5555 --broker=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery_worker:
+        condition: service_started
+volumes:
+  postgres_data:
+  redis_data:

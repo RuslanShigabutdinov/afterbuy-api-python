@@ -1,0 +1,14 @@
+FROM python:3.12.1
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY . .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+# Expose the port FastAPI will run on
+EXPOSE 5555
+
+# Start the application using Uvicorn (adjust module path as needed)
+CMD ["celery", "-A", "src.libs.celery_app", "flower", "--port=5555"]
