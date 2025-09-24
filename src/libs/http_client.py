@@ -1,4 +1,6 @@
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientError
+import asyncio
+import random
 
 
 class HttpClient:
@@ -21,5 +23,11 @@ class HttpClient:
 
 
     async def html_request(self, method: str, url: str, **kwargs) -> str:
-        async with self.session.request(method, url, **kwargs) as response:
-            return await response.text()
+        for attempt in range(5):
+            try:
+                async with self.session.request(method, url, **kwargs) as response:
+                    return await response.text()
+            except (ClientError, asyncio.TimeoutError) as e:
+                print(f'trying to get content from page {url} attempt #{attempt}, error: {e}')
+                await asyncio.sleep(5 * random.randint(1, 10) / 10)
+        raise
