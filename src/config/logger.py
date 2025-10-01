@@ -8,7 +8,7 @@ def setup_logging(
     log_file: str = "app.log",
     console_level: int = logging.INFO,
     file_level: int = logging.DEBUG,
-    sqlalchemy_level: int = logging.DEBUG,
+    sqlalchemy_level: int = logging.ERROR,
     uvicorn_level: int = logging.INFO,
     file_bytes_size: int = 10*1024*1024,
     backup_count: int = 10,
