@@ -1,0 +1,19 @@
+meta {
+  name: parse do_all
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/parser/do_all
+  body: none
+  auth: inherit
+}
+
+headers {
+  access-token: {{token}}
+}
+
+settings {
+  encodeUrl: true
+}

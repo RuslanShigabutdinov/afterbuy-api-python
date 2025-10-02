@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "afterbuy-api-python",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

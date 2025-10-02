@@ -109,11 +109,28 @@ class ParserService:
         print(products_count)
 
         for product_dto in products:
-            product_dto: ProductDTO
+            if not isinstance(product_dto, ProductDTO):
+                logging.warning(f"Skipping unexpected product payload type: {type(product_dto).__name__}")
+                continue
+
             product_dto.fabric_id = fabric.id
             product_dto.brand_id = brand.id
 
-            url_dto: UrlDTO = (await self.url_service.filter(FilterUrlsDTO(url=product_dto.link)))[0]
+            if not getattr(product_dto, "link", None):
+                logging.warning(f"Parsed product missing link. Skipping product_num={product_dto.product_num}")
+                continue
+
+            try:
+                url_candidates = await self.url_service.filter(FilterUrlsDTO(url=product_dto.link))
+            except Exception as e:
+                logging.warning(f"Failed to fetch URL entry for product {product_dto.product_num}: {e}")
+                continue
+
+            if not url_candidates:
+                logging.warning(f"No URL entry found for parsed product link: {product_dto.link}")
+                continue
+
+            url_dto: UrlDTO = url_candidates[0]
 
             product_dto.url_id = url_dto.id
             try:

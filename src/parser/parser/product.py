@@ -72,7 +72,30 @@ class ProductParserService:
                 util = ProductUtil(client)
                 tasks_l = [util.parse_item(link) for link in links_chunk]
                 results_l = await asyncio.gather(*tasks_l, return_exceptions=True)
-            return [r for r in results_l if not isinstance(r, Exception)]
+
+            filtered_results: list[ProductDTO] = []
+
+            for link, result in zip(links_chunk, results_l):
+                if isinstance(result, BaseException):
+                    logging.warning(
+                        "Skipping product link %s due to background task error: %s (%s)",
+                        link,
+                        type(result).__name__,
+                        result,
+                    )
+                    continue
+
+                if not isinstance(result, ProductDTO):
+                    logging.warning(
+                        "Unexpected result from product parsing task for link %s. Dropping entry: %s",
+                        link,
+                        type(result).__name__,
+                    )
+                    continue
+
+                filtered_results.append(result)
+
+            return filtered_results
 
         if not links:
             logging.info("No links provided to parse_products. Returning empty list.")
